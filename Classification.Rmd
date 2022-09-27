@@ -1,0 +1,159 @@
+---
+title: "Classification"
+author: "Vladimir Sokolov"
+date: "9/26/2022"
+output:
+  pdf_document: default
+---
+
+This notebook explores smoke detector data from  [Kaggle](https://www.kaggle.com/datasets/deepcontractor/smoke-detection-dataset).
+
+#Linear models for classification find a line that separates the observations such that they are placed into the correct classes. This line is called the decision boundary. Linear models are similar to linear regression and are high bias-low variance. The lines produced can underfit data and struggle to accurately represent non-linearly separable data sets.
+
+Load the smoke_detection_iot.csv. Remove x, UTC, and CNT as they are not predictors. Change Fire.Alarm to a factor.
+
+```{r}
+df <- read.csv("smoke_detection_iot.csv")
+str(df)
+df <- df[,c(3,4,5,6,7,8,9,10,11,12,13,14,16)]
+df$Fire.Alarm <- factor(df$Fire.Alarm)
+str(df)
+```
+
+Check for null values.
+
+```{r}
+sapply(df, function(x) sum(is.na(x)))
+```
+#A.
+#Divide into 80/20 train/test.
+
+```{r}
+set.seed(12345)
+i <- sample(1:nrow(df), nrow(df)*.8, replace=FALSE)
+train <- df[i,]
+test <- df[-i,]
+```
+
+#B. & C.
+#Data Exploration & Graphs
+
+Explore 
+
+Exploring distribution of Fire.Alarm
+```{r}
+summary(train$Fire.Alarm)
+plot(train$Fire.Alarm)
+```
+Exploring distribution of temperature
+```{r}
+summary(train$Temperature.C.)
+hist(train$Temperature.C.)
+```
+
+Exploring distribution of humidity
+```{r}
+summary(train$Humidity...)
+hist(train$Humidity...)
+```
+
+Exploring distribution of pressure
+```{r}
+summary(train$Pressure.hPa.)
+hist(train$Pressure.hPa.)
+```
+
+Exploring distribution of eCO2
+```{r}
+summary(train$eCO2.ppm.)
+hist(train$eCO2.ppm.)
+```
+
+
+
+
+
+
+
+
+
+
+#D.
+#Logistic Regression Model
+Explanation: Deviance Residuals shows a summary of the deviance residuals of the model. Coefficients is similar to Linear regression except it quantifies the difference in the log odds. T value is replaced by Z value which still indicates how significant the variable is, and the p value is the same where it indicates the probability of obtaining the z value. Null deviance measures lack of fit while looking at only the intercept and residual deviance measures lack of fit using the variables. A large difference means that the variables are significant and is similar to the F-statistic. AIC is used to compare algorithms with a lower AIC being preferred. Fisher scoring iterations is the number of iterations the algorithm used to produce the model.
+This model  took 15 Fisher scoring iterations to produce a model with an AIC of 20743. There is a large difference between null and residual difference indicating that the variables used are significant.PM1.0 and PM2.5 were found to be much less significant than the rest of the variables and could possibly be dropped to improve the model.
+```{r warning=FALSE}
+glm1 <- glm(Fire.Alarm~., data=train, family="binomial")
+summary(glm1)
+```
+
+
+#E.
+#Naive Bayes Model
+Explanation: A-priori is the odds prior to the training. Conditional probabilities shows the mean and standard deviation of each class for continuous variables and the breakdown of probability for each variable for discrete variables. For this data set approximately 72% of the observations were 1 and 28% were 0. There were no discrete variable so the conditional probabilities only showed the means and standard devations.
+
+```{r}
+library(e1071)
+nb1 <- naiveBayes(Fire.Alarm~., data=train)
+nb1
+```
+
+
+
+#F.
+#Predict and Evaluate
+Logistic regression performed better with an accuracy of 0.9023 and a kappa of 0.7535 indicating good agreement. Naive Bayes received an accuracy of 0.7649 and a kappa of 0.275 indicating fair agreement. Logistic regression performs better than Naive Bayes on larger data sets. This data set contained over 60 thousand observations so it is likely that this performance difference contributed to Logistic regression outperforming Naive Bayes.
+
+```{r}
+probs <- predict(glm1, newdata=test, type="response")
+p1 <- ifelse(probs>0.5, 1, 0)
+table(p1, test$Fire.Alarm)
+p2 <- predict(nb1, newdata=test, type="class")
+table(p2, test$Fire.Alarm)
+```
+
+```{r}
+library(caret)
+confusionMatrix(as.factor(p1), reference=test$Fire.Alarm)
+confusionMatrix(as.factor(p2), reference=test$Fire.Alarm)
+```
+
+```{r}
+library(ROCR)
+pr1 <- prediction(p1, test$Fire.Alarm)
+prf1 <- performance(pr1, measure = "tpr", x.measure = "fpr")
+plot(prf1)
+p02 <- ifelse(p2=="1", 1, 0)
+pr2 <- prediction(p02, test$Fire.Alarm)
+prf2 <- performance(pr2, measure = "tpr", x.measure = "fpr")
+plot(prf2)
+
+```
+```{r}
+auc <- performance(pr1, measure="auc")
+auc <- auc@y.values[[1]]
+auc
+```
+
+```{r}
+auc <- performance(pr2, measure="auc")
+auc <- auc@y.values[[1]]
+auc
+```
+
+
+
+#G.
+#Strengths and Weaknesses
+Naive Bayes is simple and works well on smaller data sets at the expense of performing worse on larger data sets and has a higher bias and lower variance than logistic regression.
+Logistic regression is simple and works better than Naive Bayes on larger data sets. It has higher variance and lower bias than Naive Bayes.
+
+#H.
+#Classification metrics used
+Accuracy- Is simple and easy to understand but ignores many factors. Simple # correct over # total.
+Sensitivity- The true positive rate. Quantifies how well it was identified but not much else.
+Specificity-True negative rate. Quantifies how well it was identified but not much else.
+Kappa- Adjusts accuracy to account for random chance with values close to 0 being poor agreement and values close to 1 being very good agreement. 
+ROC curve-Visualizes performance of the algorithm with a more vertical line being desirable. Shows how well it fits the data but does not have an easy number to point to.
+AUC- Measures the predictive value of the model with 0.5 being poor and 1 being perfect. AUC is the easy to point to number from the ROC curve but lacks any other information.
+

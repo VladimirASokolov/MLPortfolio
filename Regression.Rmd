@@ -1,0 +1,194 @@
+---
+title: "Linear Regression"
+author: "Vladimir Sokolov"
+date: "9/26/2022"
+output:
+  pdf_document: default
+---
+
+This notebook explores King County House Sales data from  [Kaggle](https://www.kaggle.com/datasets/harlfoxem/housesalesprediction).
+
+#Linear regression finds a line of best fit for a target using predictors. Linear regression is a high bias-low variance model which can under fit data but is good for linearly separable data sets. Usage and model are simple and easy to understand which is a strong strength.
+
+Load the kc_housing_data.csv file and change waterfront into a factor.
+
+```{r}
+df <- read.csv("kc_house_data.csv")
+str(df)
+df$waterfront <- factor(df$waterfront)
+str(df)
+```
+
+Check for null values.
+
+```{r}
+sapply(df, function(x) sum(is.na(x)))
+```
+#A.
+#Divide into 80/20 train/test.
+
+```{r}
+set.seed(12345)
+i <- sample(1:nrow(df), nrow(df)*.8, replace=FALSE)
+train <- df[i,]
+test <- df[-i,]
+```
+
+#B. & C.
+#Data Exploration & Graphs
+
+Explore distribution of floors with summary and histogram
+
+```{r}
+summary(train$floors)
+```
+
+```{r}
+hist(train$floors)
+```
+Graph exploring impact of floors on house price
+```{r}
+plot(train$floors, train$price)
+```
+
+Explore distribution of waterfront with summary and barplot
+
+```{r}
+summary(train$waterfront)
+```
+
+```{r}
+counts <- table(train$waterfront)
+barplot(counts)
+```
+Graph exploring impact of waterfront placement on house price
+```{r}
+plot(train$waterfront, train$price)
+```
+Explore the distribution of prices with summary and histogram
+```{r}
+summary(train$price)
+```
+
+```{r}
+hist(train$price)
+```
+Explore the distribution of sqft_living and sqft_lot with summary and histogram
+```{r}
+summary(train$sqft_living)
+summary(train$sqft_lot)
+```
+
+```{r}
+par(mfrow=c(1,2))
+hist(train$sqft_living)
+hist(train$sqft_lot)
+```
+
+
+
+
+
+
+
+
+
+#D.
+#Linear Regression Model
+Impact of sqft_living on price
+Explanation: Residuals shows a summary of the residuals of the model. Coefficients shows each variable and the intercept. The estimated weight is the coefficient in the model produced(the number you are looking for), the standard error is how far it deviates from the sample(relatively smaller is better), the t value is how significant the variable is (bigger is better), and the p value is the probability of obtaining the t value (smaller is better). R marks good p values with stars and in this case marked both the intercept and sqft_living. At the bottom of the summary is information about how the model fits the training data. The standard error(smaller is better), the r-squared(closer to 1 is better) with an adjusted stat for multiple regression which calculates how much of the variation is predicted by the model, and F-statistic which determines if the predictors are significant (>1 is good). 
+This model has an F-statistic >1 and low p value so it is confident that sqft_living effects price. At a R squared value of 0.5032 it does not capture enough predictors to reasonably estimate price using the formula produced by the model (price = -53497.702 + 285.572 * sqft_living).
+
+```{r}
+lm1 <- lm(price~sqft_living, data=train)
+summary(lm1)
+```
+
+
+#E.
+#Residuals of linear model 1
+Eplanation:
+Residuals vs Fitted determines if linear regression is appropriate depending on whether the line is horizontal or not.
+Normal Q-Q determines if the residuals are normally distributed depending on whether the points follow the diagonal line.
+Scale-Location determines if the residuals have the same variance depending on whether the line is horizontal or not.
+Residuals vs Leverage determines if there are outliers or leverage points depending on whether they fall outside the area.
+This model has a fairly horizontal residuals vs fitted indicating a linear model is a good fit. Normal Q-Q deviates significantly at the tail end indicating that not all of the residuals are normally distributed. The scale location is far from horizontal indicating that the residuals do not all have the same variance. The residuals vs leverage  has three points that are outside the normal area indicating that there are some observations with unusual values.
+```{r}
+par(mfrow=c(2,2))
+plot(lm1)
+```
+
+
+
+#F.
+#Multiple Linear Regression Model
+Impact of sqft_living, grade, and waterfront on price
+
+```{r}
+lm2 <- lm(price~sqft_living+grade+waterfront, data=train)
+summary(lm2)
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(lm2)
+```
+
+
+#G.
+#Third Model
+Impact of bedrooms, bathrooms, sqft_living, sqft_lot, waterfront, view, condition, and grade on price
+
+```{r}
+lm3 <- lm(price~bedrooms+bathrooms+sqft_living+sqft_lot+waterfront+view+condition+grade, data=train)
+summary(lm3)
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(lm3)
+```
+
+#H.
+#Comparison:
+lm1 had r^2 of .5032
+lm2 had r^2 of .576
+lm3 had r^2 of .609
+Residuals vs fitted and Normal Q-Q were similar for all three. Scale location was a diagonal line in lm1 but changed to a checkmark shape in lm2 and lm2. Residuals vs leverage identified the same points for lm1 and lm2 but in lm3 one was different. I think lm3 is better because it has the highest r^2 value.
+
+#I.
+#Correlation and MSE
+lm3 was better than lm2 which was better than lm1. These results probably happened because adding more predictors helped predict more of the variation so the correlation increased. The correlation could have most likely been improved with the exclusion or modification of the outlier values.
+
+```{r}
+pred1 <- predict(lm1, newdata=test)
+cor1 <- cor(pred1, test$price)
+mse1 <- mean((pred1-test$price)^2)
+rmse1 <- sqrt(mse1)
+
+print(paste('1correlation: ' , cor1))
+print(paste('1mse: ' , mse1))
+print(paste('1rmse: ' , rmse1))
+```
+
+```{r}
+pred2 <- predict(lm2, newdata=test)
+cor2 <- cor(pred2, test$price)
+mse2 <- mean((pred2-test$price)^2)
+rmse2 <- sqrt(mse2)
+
+print(paste('2correlation: ' , cor2))
+print(paste('2mse: ' , mse2))
+print(paste('2rmse: ' , rmse2))
+```
+
+```{r}
+pred3 <- predict(lm3, newdata=test)
+cor3 <- cor(pred3, test$price)
+mse3 <- mean((pred3-test$price)^2)
+rmse3 <- sqrt(mse3)
+
+print(paste('3correlation: ' , cor3))
+print(paste('3mse: ' , mse3))
+print(paste('3rmse: ' , rmse3))
+```
