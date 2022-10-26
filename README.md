@@ -13,7 +13,7 @@ You can see the Regression pdf [here](Regression.pdf)
 
 You can see the Classification pdf [here](Classification.pdf)
 
-# SImilarity
+# Similarity
 You can see the Regression pdf [here](SimRegression.pdf)
 
 You can see the Classification pdf [here](SimClassification.pdf)
@@ -23,3 +23,12 @@ You can see the Clustering pdf [here](SimClustering.pdf)
 You can see the Dimensionality Reduction pdf [here](SimReduction.pdf)
 
 You can see the document [here](Similarity.pdf)
+
+# Kernel and Ensemble Methods
+You can see the Regression pdf [here](KERegression.pdf)
+
+You can see the Classification pdf [here](KEClassification.pdf)
+
+You can see the Ensemble techniques pdf [here](KEnsemble.pdf)
+
+You can see the narrative document [here](KEnarrative.pdf)
