@@ -32,3 +32,7 @@ You can see the Classification pdf [here](KEClassification.pdf)
 You can see the Ensemble techniques pdf [here](KEnsemble.pdf)
 
 You can see the narrative document [here](KEnarrative.pdf)
+
+# ML with sklearn
+
+You can see the sklearn pdf [here](MLSKLearn.pdf)
