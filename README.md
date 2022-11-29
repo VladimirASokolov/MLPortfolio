@@ -36,3 +36,5 @@ You can see the narrative document [here](KEnarrative.pdf)
 # ML with sklearn
 
 You can see the sklearn pdf [here](MLSKLearn.pdf)
+
+You can see the graphviz image [here](graphviz.png)
